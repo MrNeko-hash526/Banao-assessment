@@ -1,21 +1,30 @@
-# Banao-assessment
+# Banao Assessment – Full-Stack Demo
 
-Minimal full-stack demo: a Vite + React + TypeScript frontend and a small Express backend that persists signups to a JSON file and can accept profile image uploads.
+A minimal full-stack project with a Vite + React + TypeScript frontend (using Chakra UI) and a small Express backend that persists signups to a JSON file and supports profile image uploads.
 
-## Repository layout
+Banao-assessment/
+├── frontend/       # Vite + React + TypeScript (Chakra UI)
+│   └── src/
+│       ├── AuthPages/
+│       │   ├── Signup.tsx         # Signup form with image upload & preview
+│       │   └── Login.tsx          # Login page
+│       └── dashboards/
+│           ├── PatientDash.tsx    # Patient dashboard
+│           └── DocDash.tsx        # Doctor dashboard
+│
+├── backend/        # Express server
+│   ├── index.js    # Main server entry
+│   ├── signups.json# Stores user signups
+│   └── uploads/    # Stores uploaded images (ignored by git)
+│
+└── .gitignore      # Ignores node_modules, uploads, signups.json
 
-- `frontend/` — Vite + React + TypeScript app (Chakra UI). Key pages:
-  - `src/AuthPages/Signup.tsx` — signup form with optional profile image upload, preview, and internal scroll controls.
-  - `src/AuthPages/Login.tsx` — login page that redirects to dashboards.
-  - `src/dashboards/PatientDash.tsx`, `DocDash.tsx` — simple dashboards that show saved signups and prefer uploaded profile images.
-- `backend/` — Express server that stores signups in `signups.json` and (optionally) serves uploaded files from `/uploads`.
-- `.gitignore` — ignores `node_modules`, `backend/uploads`, and `backend/signups.json`.
 
 ## Requirements
 
 - Node.js (16+ recommended)
 - npm
-- Windows PowerShell (instructions below use PowerShell syntax)
+- Windows PowerShell 
 
 ## Quick start (Windows PowerShell)
 
@@ -25,11 +34,14 @@ Open two PowerShell terminals and run the following.
 
 ```powershell
 cd 'd:/Banao-assessment/backend'
-# install backend deps (run once)
+
+# Install dependencies (first time only)
 npm install
-# If you edited server code to use multer, ensure it's installed:
+
+# Ensure multer is installed (needed for file uploads)
 npm install multer --save
-# start the backend
+
+# Start backend server
 node index.js
 ```
 
@@ -87,14 +99,6 @@ npx tsc --noEmit
 - Resize or sanitize uploaded images server-side (e.g., use `sharp`) before storing.
 - Replace manual pathname-based routing with a router (React Router) if the app grows.
 - Add unit tests for server endpoints and frontend components.
-
-## Contact / Next steps
-
-If you want, I can:
-
-- Add a small smoke test that signs up a user including an image (automated script).
-- Add client-side file validation and show file-size error messages.
-- Hide floating controls on small screens or change their position.
 
 ---
 
