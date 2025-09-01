@@ -145,7 +145,7 @@ export default function DocDash() {
 
             {!loading && !error && (
               <Box overflowX="auto" borderWidth={1} borderRadius="8px" p={2} borderColor="rgba(0,0,0,0.06)" bg="rgba(255,255,255,0.20)">
-                <table style={{ width: '100%', borderCollapse: 'collapse', color: 'black' }}>
+                {/* <table style={{ width: '100%', borderCollapse: 'collapse', color: 'black' }}>
                 <thead>
                   <tr>
                       <th style={{ textAlign: 'left', padding: '10px', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>Name</th>
@@ -182,7 +182,7 @@ export default function DocDash() {
                       </tr>
                     ))}
                 </tbody>
-              </table>
+              </table> */}
             </Box>
           )}
         </Box>
