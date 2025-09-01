@@ -1,7 +1,7 @@
 # Banao Assessment – Full-Stack Demo
 
 A minimal full-stack project with a Vite + React + TypeScript frontend (using Chakra UI) and a small Express backend that persists signups to a JSON file and supports profile image uploads.
-
+```
 Banao-assessment/
 ├── frontend/       # Vite + React + TypeScript (Chakra UI)
 │   └── src/
@@ -19,7 +19,7 @@ Banao-assessment/
 │
 └── .gitignore      # Ignores node_modules, uploads, signups.json
 
-
+```
 ## Requirements
 
 - Node.js (16+ recommended)
