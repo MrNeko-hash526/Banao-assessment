@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import bgImage from '../assets/image4.png';
 import { Box, Button, Flex, Heading, Input, HStack, Text, VStack, SimpleGrid } from '@chakra-ui/react';
 
@@ -81,6 +81,18 @@ const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const pushToast = useCustomToast();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollByAmount = (amount: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    try {
+      el.scrollBy({ top: amount, behavior: 'smooth' });
+    } catch (e) {
+      // fallback
+      el.scrollTop = el.scrollTop + amount;
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -203,7 +215,7 @@ const Signup: React.FC = () => {
 
   return (
 
-    <Flex align="center" justify="center" minH="100vh" overflowY="auto">
+    <Flex align="center" justify="center" minH="100vh" overflow="hidden">
       <Flex w="full" mx="auto" align="stretch">
         <Box
           w={{ base: 'full', md: '40%' }}
@@ -214,10 +226,11 @@ const Signup: React.FC = () => {
           borderRightWidth={{ base: 0, md: '1px' }}
           borderRightColor="gray.100"
           borderStyle="solid"
-          minH="100vh"
-          overflowY="auto"
+          minH={{ base: 'auto', md: '100vh' }}
         >
-          <Box w="full" maxW="640px" px={{ base: 4, md: 6 }} py={{ base: 3, md: 4 }} color="black">
+          <Box ref={scrollRef} w="full" maxW="640px" px={{ base: 4, md: 6 }} py={{ base: 3, md: 4 }} color="black" style={{ maxHeight: '100vh', overflowY: 'auto' }} className="no-scrollbar" position="relative">
+            <style>{`.no-scrollbar{ scrollbar-width: none; -ms-overflow-style: none; } .no-scrollbar::-webkit-scrollbar{ display: none; }`}</style>
+            
             <Heading size="2xl" fontWeight="black" mb={2} color="gray.800">
               HR Hospitals
             </Heading>
@@ -252,6 +265,7 @@ const Signup: React.FC = () => {
                   </Box>
                 </label>
                 <Text fontSize="sm" color="gray.500" mt={2}>Profile image</Text>
+                {/* floating controls moved to bottom-right corner */}
               </Box>
               <VStack gap={6} alignItems="stretch">
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
@@ -571,6 +585,13 @@ const Signup: React.FC = () => {
                       >
                         Sign Up
                       </Button>
+                
+                  <Text fontSize="sm" color="gray.600" textAlign="center" mt={3}>
+                    Already have an account?{' '}
+                    <Text as="span" color="teal.600" fontWeight="semibold" cursor="pointer" onClick={() => window.location.assign(window.location.origin + '/login')}>
+                      Log in
+                    </Text>
+                  </Text>
               </VStack>
             </form>
           </Box>

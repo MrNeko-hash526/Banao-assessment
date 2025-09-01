@@ -113,6 +113,13 @@ const Login: React.FC = () => {
                 </FormControl>
 
                 <Button bg="black" color="white" type="submit" loading={loading} width="full" py={4} fontSize="md" fontWeight="semibold" borderRadius="md">Log in</Button>
+
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Don't have an account?{' '}
+                  <Text as="span" color="teal.600" fontWeight="semibold" cursor="pointer" onClick={() => window.location.assign(window.location.origin + '/signup')}>
+                    Sign up
+                  </Text>
+                </Text>
               </VStack>
             </form>
           </Box>
