@@ -232,7 +232,7 @@ const Signup: React.FC = () => {
             <style>{`.no-scrollbar{ scrollbar-width: none; -ms-overflow-style: none; } .no-scrollbar::-webkit-scrollbar{ display: none; }`}</style>
             
             <Heading size="2xl" fontWeight="black" mb={2} color="gray.800">
-              HR Hospitals
+              HR Hospital
             </Heading>
             <Text fontSize="lg" color="gray.600" mb={8}>
               Sign up to create your account

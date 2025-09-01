@@ -36,15 +36,46 @@ const Login: React.FC = () => {
         pushToast({ title: 'Invalid', description: 'Incorrect password', status: 'error' });
         return;
       }
-      const t = (userType || found.userType || '').toLowerCase();
-      if (t === 'doctor') {
+      // if a role is selected, ensure the found email belongs to that role
+      const selectedRole = String(userType || '').trim().toLowerCase();
+      const foundRole = String(found.userType || '').trim().toLowerCase();
+      if (selectedRole === 'doctor' && foundRole !== 'doctor') {
+        pushToast({ title: 'Role mismatch', description: 'This email is not registered as a Doctor', status: 'error' });
+        return;
+      }
+      if (selectedRole === 'patient' && foundRole !== 'patient') {
+        pushToast({ title: 'Role mismatch', description: 'This email is not registered as a Patient', status: 'error' });
+        return;
+      }
+      const selected = String(userType || '').trim().toLowerCase();
+      const actual = String(found.userType || '').trim().toLowerCase();
+
+      // If a role is explicitly selected, require it to match the stored userType
+      if (selected) {
+        if (selected !== actual) {
+          pushToast({ title: 'Role mismatch', description: `Selected role does not match this account (${actual || 'unknown'})`, status: 'error' });
+          return;
+        }
+        if (selected === 'doctor') {
+          window.location.assign(window.location.origin + '/doctor-dashboard');
+          return;
+        }
+        if (selected === 'patient') {
+          window.location.assign(window.location.origin + '/patient-dashboard');
+          return;
+        }
+      }
+
+      // No explicit selection — fall back to the stored userType
+      if (actual === 'doctor') {
         window.location.assign(window.location.origin + '/doctor-dashboard');
         return;
       }
-      if (t === 'patient') {
+      if (actual === 'patient') {
         window.location.assign(window.location.origin + '/patient-dashboard');
         return;
       }
+
       // fallback
       pushToast({ title: 'Logged in', description: 'Login successful', status: 'success' });
     } catch (e) {
@@ -69,7 +100,7 @@ const Login: React.FC = () => {
           overflowY="auto"
         >
           <Box w="full" maxW="640px" px={{ base: 4, md: 6 }} py={{ base: 3, md: 4 }} color="black">
-            <Heading size="2xl" fontWeight="black" mb={2} color="gray.800">HR Hospitals</Heading>
+            <Heading size="2xl" fontWeight="black" mb={2} color="gray.800">HR Hospital</Heading>
             <Text fontSize="lg" color="gray.600" mb={8}>Log in to your account</Text>
             <form onSubmit={handleSubmit}>
               <VStack gap={6} alignItems="stretch">
