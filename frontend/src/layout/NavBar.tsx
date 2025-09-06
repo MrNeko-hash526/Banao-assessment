@@ -13,7 +13,8 @@ import {
   useDisclosure,
   Collapse,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { checkIsDoctor, checkIsPatient, getUserFromToken } from '../utils/auth';
 import { HamburgerIcon, CloseIcon } from "@chakra-ui/icons";
 
 type User = {
@@ -22,6 +23,12 @@ type User = {
   lastName?: string;
   email?: string;
   profileImage?: string;
+  role?: string;
+  userType?: string;
+  type?: string;
+  roles?: string[];
+  isDoctor?: boolean;
+  isPatient?: boolean;
 };
 
 const getImageUrl = (p?: string) => {
@@ -34,6 +41,7 @@ export default function NavBar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isOpen, onToggle } = useDisclosure();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -82,7 +90,45 @@ export default function NavBar() {
     window.location.assign("/login");
   };
 
-  const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) => (
+  // smart Home handler
+  const handleHomeClick = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+
+    const raw =
+      user ||
+      (localStorage.getItem("user")
+        ? JSON.parse(localStorage.getItem("user") as string)
+        : null);
+    const u: any = raw || null;
+
+    if (!u) {
+      navigate("/");
+      return;
+    }
+
+  const isDoctor = checkIsDoctor(u);
+  const isPatient = checkIsPatient(u);
+
+    if (isDoctor) {
+      navigate("/doctor-dashboard");
+      return;
+    }
+
+    if (isPatient) {
+      navigate("/patient-dashboard");
+      return;
+    }
+
+    navigate("/");
+  };
+
+  const NavLink = ({
+    to,
+    children,
+  }: {
+    to: string;
+    children: React.ReactNode;
+  }) => (
     <CLink
       as={RouterLink}
       to={to}
@@ -110,22 +156,51 @@ export default function NavBar() {
   );
 
   return (
-    <Box as="header" w="full" bg="gray.900" px={{ base: 4, md: 8 }} py={3} boxShadow="sm" position="sticky" top={0} zIndex={1000}>
+    <Box
+      as="header"
+      w="full"
+      bg="gray.900"
+      px={{ base: 4, md: 8 }}
+      py={3}
+      boxShadow="sm"
+      position="sticky"
+      top={0}
+      zIndex={1000}
+    >
       <Flex align="center" justify="space-between" maxW="1200px" mx="auto">
-        {/* Logo */}
-        <CLink as={RouterLink} to="/" _hover={{ textDecoration: "none" }}>
-          <Text fontWeight="extrabold" fontSize="2xl" letterSpacing="wide" color="teal.300">
+  {/* Logo */}
+  <CLink /*onClick={handleHomeClick}*/ _hover={{ textDecoration: "none", cursor: 'pointer' }}>
+          <Text
+            fontWeight="extrabold"
+            fontSize="2xl"
+            letterSpacing="wide"
+            color="teal.300"
+          >
             Medi
             <Box as="span" color="white">
               Mind
             </Box>
           </Text>
-        </CLink>
+  </CLink>
 
         {/* Desktop nav */}
         <HStack spacing={8} display={{ base: "none", md: "flex" }}>
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="/blogs">Articles</NavLink>
+          <CLink
+            onClick={handleHomeClick}
+            position="relative"
+            fontSize="sm"
+            fontWeight="medium"
+            color="gray.200"
+            _hover={{ color: "teal.300" }}
+          >
+            Home
+          </CLink>
+          {(() => {
+            const raw = user || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null) || getUserFromToken();
+            const isDoc = checkIsDoctor(raw);
+            const articlesPath = isDoc ? '/blogs/doctor' : '/blogs';
+            return <NavLink to={articlesPath}>Articles</NavLink>;
+          })()}
           <NavLink to="/about">About</NavLink>
         </HStack>
 
@@ -135,13 +210,20 @@ export default function NavBar() {
             <Spinner size="sm" color="teal.300" />
           ) : (
             <>
-              {/* User info (desktop) */}
               {user && (
-                <Flex align="center" gap={3} display={{ base: "none", md: "flex" }}>
+                <Flex
+                  align="center"
+                  gap={3}
+                  display={{ base: "none", md: "flex" }}
+                >
                   <Avatar
                     size="sm"
                     name={`${user.firstName} ${user.lastName}`}
-                    src={user?.profileImage ? getImageUrl(user.profileImage) : undefined}
+                    src={
+                      user?.profileImage
+                        ? getImageUrl(user.profileImage)
+                        : undefined
+                    }
                     border="2px solid"
                     borderColor="teal.300"
                   />
@@ -156,9 +238,13 @@ export default function NavBar() {
                 </Flex>
               )}
 
-              {/* Auth button */}
               {user ? (
-                <Button size="sm" colorScheme="teal" variant="solid" onClick={handleLogout}>
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  variant="solid"
+                  onClick={handleLogout}
+                >
                   Logout
                 </Button>
               ) : (
@@ -185,8 +271,13 @@ export default function NavBar() {
       <Collapse in={isOpen} animateOpacity>
         <Box bg="gray.800" px={4} py={4} display={{ md: "none" }}>
           <VStack align="stretch" spacing={4}>
-            <NavLink to="/">Home</NavLink>
-            <NavLink to="/blogs">Articles</NavLink>
+            <CLink onClick={handleHomeClick}>Home</CLink>
+            {(() => {
+              const raw = user || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null) || getUserFromToken();
+              const isDoc = checkIsDoctor(raw);
+              const articlesPath = isDoc ? '/blogs/doctor' : '/blogs';
+              return <NavLink to={articlesPath}>Articles</NavLink>;
+            })()}
             <NavLink to="/about">About</NavLink>
           </VStack>
         </Box>

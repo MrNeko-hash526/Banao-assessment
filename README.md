@@ -1,6 +1,7 @@
 # Banao Assessment – Full-Stack Demo
 
 A minimal full-stack project with a Vite + React + TypeScript frontend (using Chakra UI) and a small Express backend that persists signups to a JSON file and supports profile image uploads.
+
 ```
 Banao-assessment/
 ├── frontend/       # Vite + React + TypeScript (Chakra UI)
@@ -13,93 +14,93 @@ Banao-assessment/
 │           └── DocDash.tsx        # Doctor dashboard
 │
 ├── backend/        # Express server
-│   ├── index.js    # Main server entry
-│   ├── signups.json# Stores user signups
-│   └── uploads/    # Stores uploaded images (ignored by git)
-│
-└── .gitignore      # Ignores node_modules, uploads, signups.json
+# Banao Assessment — Full‑Stack Blog Demo
 
+A small full‑stack demo with a Vite + React + TypeScript frontend (Chakra UI) and an Express + Prisma backend (MySQL). The app supports user roles (doctor/patient), blog CRUD for doctors, image uploads for blog posts, and a patient-facing blog list filtered by category.
+
+Project layout
 ```
-## Requirements
 
-- Node.js (16+ recommended)
+Banao-assessment/
+├─ backend/ # Express server, Prisma, uploads
+│ ├─ prisma/ # Prisma schema (MySQL datasource)
+│ ├─ controller/ # API controllers (blogs, upload, auth)
+│ ├─ routes/ # Express routes
+│ └─ uploads/ # Uploaded files (ignored by git)
+├─ frontend/ # Vite + React + TypeScript (Chakra UI)
+│ └─ src/
+│ ├─ blogs/ # Blog pages, dashboard, forms, cards
+│ └─ components/ # Shared UI components
+└─ .gitignore
+
+````
+
+Highlights
+- Blog categories are defined in Prisma: MENTAL_HEALTH, HEART_DISEASE, COVID19, IMMUNIZATION.
+- Doctors can create/edit/delete blogs, mark drafts, and upload an image per blog.
+- Patients can view published (non-draft) blogs and filter by category.
+- The backend stores image paths and serves uploads from `/uploads`.
+- Database: MySQL via Prisma (see `backend/prisma/schema.prisma`).
+
+Requirements
+- Node.js 16+ (recommended)
 - npm
-- Windows PowerShell 
+- MySQL server (or a MySQL-compatible connection string in `DATABASE_URL`)
 
-## Quick start (Windows PowerShell)
+Quick start (Windows PowerShell)
 
-Open two PowerShell terminals and run the following.
-
-1. Start the backend
+1) Backend
 
 ```powershell
 cd 'd:/Banao-assessment/backend'
-
-# Install dependencies (first time only)
+# install dependencies (first time)
 npm install
 
-# Ensure multer is installed (needed for file uploads)
-npm install multer --save
+# create .env (see .env.example) and set DATABASE_URL for MySQL
+# run prisma migrations if you want to create the schema:
+npx prisma migrate dev --name init
 
-# Start backend server
+# start the server
 node index.js
-```
+````
 
-The backend listens on port 5000 by default (the frontend fetches `http://localhost:5000`).
+The backend listens on port 5000 by default. Adjust the frontend API URL via `VITE_API_URL` if needed.
 
-2. Start the frontend (Vite dev server)
+2. Frontend
 
 ```powershell
 cd 'd:/Banao-assessment/frontend'
-# install frontend deps (run once)
 npm install
-# start dev server
 npm run dev
 ```
 
-Open the frontend URL printed by Vite (typically `http://localhost:5173`) and navigate to:
+Open the Vite URL (usually `http://localhost:5173`) and use the app.
 
-- `/signup` — signup page (file upload optional)
-- `/login` — login page
-- `/patient-dashboard` and `/doctor-dashboard` — dashboards
+Important files & features
 
-## API endpoints (backend)
+- `backend/prisma/schema.prisma` — defines `Blog`, `User`, the `Category` enum (the four required categories) and MySQL datasource.
+- `backend/controller/blogController.js` — blog CRUD, draft handling, and server-side image saving for base64 payloads.
+- `backend/routes/blogRoutes.js` — public and protected blog routes (`/blogs`, `/blogs/mine`, `/blogs/:id`, POST/PUT/DELETE).
+- `frontend/src/blogs/CreateBlog.tsx` (and `DoctorBlogForm.tsx`) — blog creation/edit form (title, image upload, category, summary, content, draft toggle).
+- `frontend/src/components/blog/BlogCard.tsx` — blog list card; summary truncated to 15 words (per requirement).
+- Uploads are saved under `backend/uploads` and served from the server; the client maps `/uploads/...` paths to the backend origin.
 
-- `GET /signups` — get all saved signups (JSON array)
-- `POST /save-signup` — save a signup
-  - If a file is included the frontend sends a multipart FormData with `profileImage` and other fields; the backend saves the file into `backend/uploads` and stores `profileImage` as `/uploads/<filename>` in the saved object.
-- Static files served from `/uploads` if the server is configured with express.static.
+Security & env
 
-## Notes & troubleshooting
+- Do not commit `.env` to git. `.env.example` is provided. Add `DATABASE_URL` pointing at your MySQL instance.
 
-- Multer dependency: the backend code expects `multer` if file uploads were enabled. If you see `Error: Cannot find module 'multer'`, run in the `backend` folder:
+Notes & troubleshooting
 
-```powershell
-npm install multer --save
-```
+- If image upload fails with a missing module error, install multer in the backend:
+  ```powershell
+  cd backend
+  npm install multer --save
+  ```
+- If uploads return 404, ensure the server is running, check `backend/uploads` for files, and confirm the stored image URL is correct.
 
-- If uploads don't appear in the dashboards, check:
+Suggested next steps
 
-  1. Backend is running on port 5000.
-  2. The saved signup object has a `profileImage` that starts with `/uploads/`.
-  3. The frontend `getImageUrl()` helper prefixes `http://localhost:5000` for `/uploads` paths.
+- Add server-side validation to limit summary length to 15 words (currently enforced client-side display).
+- Add tests for critical flows (create blog, image upload, role-based access).
 
-- Type checking: the frontend is TypeScript. To run a quick type check from the `frontend` folder:
-
-```powershell
-cd 'd:/Banao-assessment/frontend'
-npx tsc --noEmit
-```
-
-- If you revert changes while I'm editing files, re-run the dev servers to pick up changes.
-
-## Development notes & possible improvements
-
-- Add file size/type validation on the client and server (currently any image file is accepted).
-- Resize or sanitize uploaded images server-side (e.g., use `sharp`) before storing.
-- Replace manual pathname-based routing with a router (React Router) if the app grows.
-- Add unit tests for server endpoints and frontend components.
-
----
-
-This README covers running and testing the current app locally on Windows PowerShell. If you'd like a different format or extra sections (architecture diagram, API contract, or test harness), tell me what to include and I'll add it.
+If you want I can add a short API contract section or example curl commands for each endpoint — tell me which you'd prefer.

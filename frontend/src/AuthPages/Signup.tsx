@@ -150,6 +150,23 @@ const Signup: React.FC = () => {
           }
           setIsSubmitting(false);
           if (res.ok) {
+            // parse server response and save token/user if provided so NavBar can show profile
+            let json: any = null;
+            try {
+              json = await res.json();
+            } catch (e) {
+              json = null;
+            }
+            // support common shapes: { token, user } or { ok: true, user, token } or { ok:true, data: { user, token } }
+            const maybeToken = json?.token || json?.data?.token || null;
+            const maybeUser = json?.user || json?.data?.user || null;
+            if (maybeToken) {
+              localStorage.setItem('token', maybeToken);
+            }
+            if (maybeUser) {
+              try { localStorage.setItem('user', JSON.stringify(maybeUser)); } catch {}
+            }
+
             pushToast({ title: 'Signed up', description: 'Signup saved to backend.', status: 'success' });
             // clear selected file after successful submit
             setProfileFile(null);

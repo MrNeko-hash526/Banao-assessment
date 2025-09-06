@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Prisma artifacts
+prisma/migrations/
+prisma/dev.db
+
+# Uploads and temp
+uploads/
+tmp/
+
+# Logs
+logs
+*.log
+
+# OS / Editor
+.vscode/
+.DS_Store
+Thumbs.db

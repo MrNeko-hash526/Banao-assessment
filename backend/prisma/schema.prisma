@@ -30,7 +30,7 @@ model Blog {
   imageUrl   String?   // optional in case doctor doesn't upload an image
   category   Category
   summary    String
-  content    String
+  content    String   @db.LongText
   isDraft    Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
