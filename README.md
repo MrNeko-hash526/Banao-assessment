@@ -97,10 +97,3 @@ Notes & troubleshooting
   npm install multer --save
   ```
 - If uploads return 404, ensure the server is running, check `backend/uploads` for files, and confirm the stored image URL is correct.
-
-Suggested next steps
-
-- Add server-side validation to limit summary length to 15 words (currently enforced client-side display).
-- Add tests for critical flows (create blog, image upload, role-based access).
-
-If you want I can add a short API contract section or example curl commands for each endpoint — tell me which you'd prefer.
