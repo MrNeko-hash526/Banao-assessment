@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as yup from 'yup';
 import {
   Box,
   Heading,
@@ -44,6 +45,26 @@ export default function CreateBlog() {
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [loadingExisting, setLoadingExisting] = useState(false);
 
+  // Yup validation schema
+  const createBlogSchema = yup.object({
+    title: yup.string().trim().required('Title is required'),
+    category: yup.string().required('Please select a category'),
+    summary: yup.string().trim().required('Summary is required').test('max-words', 'Summary must be 50 words or less', (v) => {
+      if (!v) return false;
+      const count = String(v).split(/\s+/).filter(Boolean).length;
+      return count <= 50;
+    }),
+    content: yup.string().trim().required('Content is required'),
+    file: yup.mixed().test('fileSize', 'Image must be smaller than 8MB', (value) => {
+      if (!value) return true; // optional
+      try {
+        return (value as File).size <= 8 * 1024 * 1024;
+      } catch (e) {
+        return true;
+      }
+    }),
+  });
+
   // determine user role from localStorage; only doctors can create blogs
   let rawUser: any = null;
   try {
@@ -65,14 +86,24 @@ export default function CreateBlog() {
   }
 
   async function submit(draft = false) {
-    // client-side validation
-    const nextErrors: Record<string,string> = {};
-    if (!title.trim()) nextErrors.title = 'Title is required';
-    if (!summary.trim()) nextErrors.summary = 'Summary is required';
-    if (!content.trim()) nextErrors.content = 'Content is required';
-    if (!category) nextErrors.category = 'Please select a category';
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
+    // client-side validation using Yup
+    try {
+      await createBlogSchema.validate({ title, category, summary, content, file }, { abortEarly: false });
+      setErrors({});
+    } catch (validationErr: any) {
+      const nextErrors: Record<string, string> = {};
+      if (validationErr && Array.isArray(validationErr.inner) && validationErr.inner.length) {
+        validationErr.inner.forEach((e: any) => {
+          if (e.path) nextErrors[e.path] = e.message;
+        });
+      } else if (validationErr && validationErr.path) {
+        nextErrors[validationErr.path] = validationErr.message;
+      } else if (validationErr && validationErr.message) {
+        nextErrors._form = validationErr.message;
+      }
+      setErrors(nextErrors);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -276,6 +307,7 @@ export default function CreateBlog() {
                 placeholder="Write a concise, descriptive title"
               />
               <FormHelperText>Short, clear titles perform better.</FormHelperText>
+              {errors.title && <Text color="red.400" fontSize="sm">{errors.title}</Text>}
             </FormControl>
 
             <FormControl isRequired>
@@ -286,6 +318,13 @@ export default function CreateBlog() {
                 ))}
               </Select>
               {errors.category && <Text color="red.400" fontSize="sm">{errors.category}</Text>}
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel>Summary</FormLabel>
+              <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3} placeholder="Short summary (approx. 15 words)" />
+              <FormHelperText>Keep the summary concise — we display the first 50 words in listings.</FormHelperText>
+              {errors.summary && <Text color="red.400" fontSize="sm">{errors.summary}</Text>}
             </FormControl>
 
             <FormControl>
@@ -318,6 +357,7 @@ export default function CreateBlog() {
                 ) : (
                   <Text mt={3} fontSize="sm" color="gray.400">Recommended: 1200×800, JPG/PNG</Text>
                 )}
+                {errors.file && <Text color="red.400" fontSize="sm" mt={2}>{errors.file}</Text>}
               </Box>
             </FormControl>
 
@@ -325,6 +365,7 @@ export default function CreateBlog() {
               <FormLabel>Content</FormLabel>
               <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={16} placeholder="Write the full article here..." />
               <FormHelperText>Use headings and short paragraphs for readability.</FormHelperText>
+              {errors.content && <Text color="red.400" fontSize="sm">{errors.content}</Text>}
             </FormControl>
 
             <Divider />

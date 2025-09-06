@@ -26,6 +26,17 @@ app.use(morgan('dev'));
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
 app.use(limiter);
 
+// Dev helper: log whether Authorization header is present for blog routes
+app.use((req, res, next) => {
+	try {
+		if (req.path && req.path.startsWith('/blogs')) {
+			const hasAuth = !!req.headers.authorization;
+			console.log(`DEV-LOG: [${req.method}] ${req.path} - Authorization header present: ${hasAuth}`);
+		}
+	} catch (e) {}
+	return next();
+});
+
 // serve uploaded files
 app.use('/uploads', serveUploads);
 
