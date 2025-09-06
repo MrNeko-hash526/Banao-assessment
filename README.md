@@ -20,7 +20,7 @@ A small full‑stack demo with a Vite + React + TypeScript frontend (Chakra UI) 
 
 Project layout
 ```
-
+```
 Banao-assessment/
 ├─ backend/ # Express server, Prisma, uploads
 │ ├─ prisma/ # Prisma schema (MySQL datasource)
