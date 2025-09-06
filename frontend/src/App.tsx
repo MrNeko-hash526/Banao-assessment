@@ -6,6 +6,7 @@ import { ToastProvider } from "./components/ui/toast";
 import DocDash from "./dashboards/DocDash";
 import PatientDash from "./dashboards/PatientDash";
 import BlogDetail from "./blogs/BlogDetail";
+import About from './pages/About';
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import MainLayout from './layout/MainLayout';
@@ -31,6 +32,7 @@ const App = () => {
                 { index: true, element: <PatientDash /> },
                 { path: 'patient-dashboard', element: <PatientDash /> },
                 { path: 'doctor-dashboard', element: <DocDash /> },
+                { path: 'about', element: <About /> },
                 { path: 'blogs/:id', element: <BlogDetail /> },
               ]
             }

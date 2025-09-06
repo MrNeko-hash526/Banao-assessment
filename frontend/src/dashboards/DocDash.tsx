@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Flex, Heading, Spinner, Text, Button } from '@chakra-ui/react';
-import bgImage from '../assets/image.png';
+import { Box, Flex, Heading, Spinner, Text, Button, Image, VStack } from '@chakra-ui/react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import docBack from '../assets/doc_back.webp';
 
 type Signup = {
   firstName?: string;
@@ -17,6 +19,13 @@ type Signup = {
 };
 
 export default function DocDash() {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev || 'auto';
+    };
+  }, []);
   const [data, setData] = useState<Signup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,17 +74,57 @@ export default function DocDash() {
 
   const [showLatestDetails, setShowLatestDetails] = useState(false);
 
+  const MotionHeading = motion(Heading);
+  const MotionText = motion(Text);
+  const MotionImage = motion(Image);
+
   return (
-    <Box
-      minH="100vh"
-  bgImage={`linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0.22)), url(${bgImage})`}
-      bgSize="cover"
-      bgPos="center"
-      bgRepeat="no-repeat"
-  color="black"
-      py={10}
-    >
-      <Flex maxW="1100px" mx="auto" gap={6} px={4} direction={{ base: 'column', md: 'row' }}>
+    <Box minH="100vh" bg="white" color="gray.900">
+      {/* Hero */}
+      <Box height="calc(100vh - 64px)" overflow="hidden" display="flex" alignItems="center">
+        <Flex maxW="1200px" w="full" mx="auto" px={{ base: 4, md: 6 }} gap={8} align="center">
+          <VStack align="start" spacing={6} w={{ base: '100%', md: '45%' }}>
+            <MotionHeading
+              as="h1"
+              fontSize={{ base: '4xl', md: '6xl', lg: '7xl' }}
+              fontWeight="black"
+              lineHeight="0.9"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
+              Write.
+              <Text as="span" color="teal.500">Teach.</Text>
+              <br />
+              Improve care.
+            </MotionHeading>
+
+            <MotionText
+              fontSize={{ base: 'lg', md: '2xl' }}
+              color="gray.600"
+              fontWeight="medium"
+              maxW="640px"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+            >
+              Share concise, evidence-backed posts that help peers and patients make better decisions.
+            </MotionText>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}>
+              <Button as={Link} to="/blogs/create" size="lg" colorScheme="teal" borderRadius="full" px={8} py={6} fontSize="lg" fontWeight="bold">
+                Create Blog
+              </Button>
+            </motion.div>
+          </VStack>
+
+          <Box w={{ base: '100%', md: '55%' }} h="420px" overflow="hidden" borderRadius="md">
+            <MotionImage src={docBack} alt="doctor background" w="100%" h="100%" objectFit="cover" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} />
+          </Box>
+        </Flex>
+      </Box>
+
+      <Flex maxW="1100px" mx="auto" gap={6} px={4} direction={{ base: 'column', md: 'row' }} py={8}>
         <Box flex={1} p={6}>
           <Box mb={4}>
             <Heading size="lg">Doctor Signups</Heading>
