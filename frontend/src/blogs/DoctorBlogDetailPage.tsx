@@ -30,11 +30,13 @@ export default function DoctorBlogDetailPage() {
       setLoading(false);
       return;
     }
-    // avoid duplicate fetches for same id (React StrictMode can mount/unmount twice)
-    if (lastFetchedId.current === id) return;
-    lastFetchedId.current = id;
+  // avoid duplicate fetches for same id (React StrictMode can mount/unmount twice)
+  // NOTE: don't mark as fetched until we actually complete a fetch —
+  // marking too early combined with StrictMode unmount will abort the
+  // in-progress request and the remount will skip fetching.
+  if (lastFetchedId.current === id) return;
 
-    const controller = new AbortController();
+  const controller = new AbortController();
     let mounted = true;
     const load = async () => {
       try {
@@ -46,7 +48,11 @@ export default function DoctorBlogDetailPage() {
           throw new Error(`Failed to fetch blog: ${res.status} ${res.statusText} ${text}`);
         }
         const json = await res.json();
-        if (mounted) setBlog(json?.blog || json?.data || json || null);
+        if (mounted) {
+          setBlog(json?.blog || json?.data || json || null);
+          // mark as fetched only after successful load
+          lastFetchedId.current = id;
+        }
       } catch (e) {
         if ((e as any).name === 'AbortError') return;
         console.error('DoctorBlogDetailPage load error:', e);

@@ -31,7 +31,33 @@ function normalizeCategory(raw) {
   //  - "Covid-19" -> "COVID19"
   const upper = s.toUpperCase();
   const cleaned = upper.replace(/[^A-Z0-9 ]+/g, '');
-  return cleaned.replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  // Try to map to known enum values. Prisma enum names are:
+  const known = ['MENTAL_HEALTH', 'HEART_DISEASE', 'COVID19', 'IMMUNIZATION'];
+  const candidate = cleaned.replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  // direct match
+  if (known.includes(candidate)) return candidate;
+  // match ignoring underscores (accept MENTALHEALTH -> MENTAL_HEALTH)
+  const candidateNoUnderscore = candidate.replace(/_/g, '');
+  for (const k of known) {
+    if (k.replace(/_/g, '') === candidateNoUnderscore) return k;
+  }
+  // fallback to the best-effort candidate
+  return candidate;
+}
+
+function countWords(s) {
+  if (!s && s !== 0) return 0;
+  return String(s).split(/\s+/).filter(Boolean).length;
+}
+
+function validateBlogPayload({ title, content, category, summary }) {
+  if (!title || !String(title).trim()) return { valid: false, error: 'Title is required' };
+  if (!content || !String(content).trim()) return { valid: false, error: 'Content is required' };
+  if (!category || !String(category).trim()) return { valid: false, error: 'Category is required' };
+  if (!summary || !String(summary).trim()) return { valid: false, error: 'Summary is required' };
+  const words = countWords(summary);
+  if (words > 50) return { valid: false, error: 'Summary must be 50 words or less' };
+  return { valid: true };
 }
 
 async function getBlogs(req, res, next) {
@@ -67,10 +93,13 @@ async function getBlogById(req, res, next) {
     // allow owner doctor to view their own draft
     if (blog.isDraft) {
       const userId = req.user && Number(req.user.id);
+      console.log('getBlogById: blog is draft. ownerId=', blog.doctorId, 'requesterId=', userId);
       if (!userId || Number(blog.doctorId) !== userId) {
+        console.log('getBlogById: access denied for draft blog id=', id, 'requester=', userId);
         return res.status(404).json({ ok: false, error: 'Not found' });
       }
     }
+    console.log('getBlogById: returning blog id=', id, 'isDraft=', !!blog.isDraft);
     return res.json({ ok: true, data: blog });
   } catch (e) {
     return next(e);
@@ -79,9 +108,10 @@ async function getBlogById(req, res, next) {
 
 async function createBlog(req, res, next) {
   try {
-  // require category and summary from the client and allow optional isDraft flag
-  const { title, content, category, isDraft, summary } = req.body;
-  if (!title || !content || !category || !summary) return res.status(400).json({ ok: false, error: 'Title, content, category and summary required' });
+    // require category and summary from the client and allow optional isDraft flag
+    const { title, content, category, isDraft, summary } = req.body;
+    const validation = validateBlogPayload({ title, content, category, summary });
+    if (!validation.valid) return res.status(400).json({ ok: false, error: validation.error });
 
     const userId = req.user && req.user.id;
     const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
@@ -138,7 +168,12 @@ async function updateBlog(req, res, next) {
     const data = {};
     if (title) data.title = title;
     if (content) data.content = content;
-    if (summary) data.summary = summary;
+    if (summary) {
+      // validate summary length on update
+      const words = countWords(summary);
+      if (words > 50) return res.status(400).json({ ok: false, error: 'Summary must be 50 words or less' });
+      data.summary = summary;
+    }
     if (typeof isDraft !== 'undefined') data.isDraft = !!isDraft;
     if (status) data.status = status;
     if (category) {
