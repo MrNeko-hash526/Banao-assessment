@@ -1,126 +1,73 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const authService = require('./services/authService');
+const { uploadSingle, serveUploads } = require('./services/upload');
+require('dotenv').config();
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const errorHandler = require('./middleware/errorHandler');
+
+// initialize prisma client (singleton) so it's available app-wide
+const prisma = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+// configure helmet but allow cross-origin resource loading for static assets
+app.use(helmet({
+	crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(morgan('dev'));
 
-// multer for file uploads
-const multer = require('multer');
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => cb(null, uploadsDir),
-	filename: (req, file, cb) => {
-		const ext = (file.originalname || '').split('.').pop();
-		const name = `p-${Date.now()}.${ext || 'png'}`;
-		cb(null, name);
-	},
-});
-const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB limit
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
+app.use(limiter);
 
 // serve uploaded files
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', serveUploads);
 
-const storageDir = path.join(__dirname);
-const storageFile = path.join(storageDir, 'signups.json');
-
-// Ensure storage file exists and is a JSON array
-function ensureStorage() {
-	if (!fs.existsSync(storageFile)) {
-		try {
-			fs.writeFileSync(storageFile, '[]', { encoding: 'utf8' });
-			console.log('Created storage file:', storageFile);
-		} catch (e) {
-			console.error('Failed to create storage file:', e);
-			throw e;
-		}
-	}
-}
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-app.get('/signups', (req, res) => {
+// compatibility redirect: /signups -> /auth/signups
+app.get('/signups', (req, res) => res.redirect(302, '/auth/signups'));
+
+// DB health check
+app.get('/health/db', async (req, res, next) => {
 	try {
-		ensureStorage();
-		const raw = fs.readFileSync(storageFile, 'utf8');
-		let arr = [];
-		try {
-			arr = JSON.parse(raw) || [];
-		} catch (e) {
-			arr = [];
-		}
-		return res.json({ ok: true, data: arr });
+		// simple lightweight query
+		await prisma.$queryRaw`SELECT 1`;
+		return res.json({ ok: true, db: 'reachable' });
 	} catch (e) {
-		console.error('Error reading signups:', e);
-		return res.status(500).json({ ok: false, error: String(e) });
+		// forward to error handler
+		e.status = 500;
+		return next(e);
 	}
 });
 
-app.post('/save-signup', upload.single('profileImage'), (req, res) => {
-		try {
-			ensureStorage();
+// auth routes (signup, login, signups)
+const authRoutes = require('./routes/authRoutes');
+app.use('/auth', authRoutes);
 
-			// form fields will be in req.body (strings), file in req.file
-			// debug log
-			console.log('POST /save-signup body keys:', Object.keys(req.body));
-			if (req.file) console.log('POST /save-signup file:', req.file.filename, req.file.size);
-		const body = req.body || {};
-		const payload = { ...body };
-		// Basic sanitization: remove confirmPassword before storing
-		if (payload.confirmPassword) delete payload.confirmPassword;
+// upload routes
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use('/upload', uploadRoutes);
 
-		// If a file was uploaded, attach its public path
-		if (req.file && req.file.filename) {
-			payload.profileImage = `/uploads/${req.file.filename}`;
-		}
+// blog routes
+const blogRoutes = require('./routes/blogRoutes');
+app.use('/blogs', blogRoutes);
 
-		// Normalize and validate email
-		if (!payload.email) {
-			return res.status(400).json({ ok: false, error: 'Email is required' });
-		}
-		const normalizedEmail = String(payload.email).trim().toLowerCase();
-		payload.email = normalizedEmail;
-		payload.savedAt = new Date().toISOString();
 
-		const raw = fs.readFileSync(storageFile, 'utf8');
-		let arr = [];
-		try {
-			arr = JSON.parse(raw) || [];
-		} catch (e) {
-			arr = [];
-		}
+// attach to app.locals for convenient access in middleware/controllers/services
+app.locals.prisma = prisma;
 
-		// check for duplicate email (normalized)
-		const exists = arr.some((u) => typeof u.email === 'string' && String(u.email).trim().toLowerCase() === normalizedEmail);
-		if (exists) {
-			// if we saved a file but email exists, optionally remove the file to avoid orphan
-			if (req.file && req.file.path) {
-				try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ }
-			}
-			return res.status(409).json({ ok: false, error: 'Email already registered' });
-		}
-
-		arr.push(payload);
-		fs.writeFileSync(storageFile, JSON.stringify(arr, null, 2), 'utf8');
-
-		return res.json({ ok: true, count: arr.length });
-	} catch (e) {
-		console.error('Error saving signup:', e);
-		return res.status(500).json({ ok: false, error: String(e) });
-	}
-});
+// global error handler (should be after routes)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
 	console.log(`Backend index listening on http://localhost:${PORT}`);
-	try {
-		ensureStorage();
-	} catch (e) {
-		console.error('Storage initialization failed');
-	}
 });
 

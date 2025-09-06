@@ -1,0 +1,23 @@
+/* Basic reset to avoid default browser margins that can cause scrollbars */
+html,
+body,
+#root {
+    height: 100%;
+    overflow: hidden;
+    /* prevent global scrollbar */
+}
+
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-y: hidden;
+    /* ensure no vertical scrollbar */
+}
+
+/* Ensure box sizing is predictable */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}

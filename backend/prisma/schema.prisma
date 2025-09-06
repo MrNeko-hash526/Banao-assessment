@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int     @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String  @unique
+  username    String
+  password    String
+  userType    UserType
+  addressLine1 String
+  city        String
+  state       String
+  pincode     String
+  profileImage String?
+  savedAt     DateTime @default(now())
+  blogs       Blog[]  
+}
+
+model Blog {
+  id         Int       @id @default(autoincrement())
+  title      String
+  imageUrl   String?   // optional in case doctor doesn't upload an image
+  category   Category
+  summary    String
+  content    String
+  isDraft    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relation to User (Doctor)
+  doctorId   Int
+  doctor     User      @relation(fields: [doctorId], references: [id])
+}
+
+enum Category {
+  MENTAL_HEALTH
+  HEART_DISEASE
+  COVID19
+  IMMUNIZATION
+}
+
+enum UserType {
+  PATIENT
+  DOCTOR
+}

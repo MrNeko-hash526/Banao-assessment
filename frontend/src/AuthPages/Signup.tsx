@@ -137,12 +137,12 @@ const Signup: React.FC = () => {
               const v = (payloadToSend as Record<string, any>)[k];
               if (v !== undefined && v !== null) fd.append(k, String(v));
             });
-            res = await fetch('http://localhost:5000/save-signup', {
+            res = await fetch('http://localhost:5000/auth/signup', {
               method: 'POST',
               body: fd,
             });
           } else {
-            res = await fetch('http://localhost:5000/save-signup', {
+            res = await fetch('http://localhost:5000/auth/signup', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payloadToSend),
@@ -573,7 +573,7 @@ const Signup: React.FC = () => {
                         bg="black"
                         color="white"
                         type="submit"
-                        loading={isSubmitting}
+                        isLoading={isSubmitting}
                         width="full"
                         py={4}
                         fontSize="md"

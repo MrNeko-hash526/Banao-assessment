@@ -17,66 +17,55 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/signups');
-      const json = await res.json();
-      if (!json || !json.ok) {
+      const res = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: String(email).trim(), password }),
+      });
+
+      setLoading(false);
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          pushToast({ title: 'Invalid', description: 'Invalid email or password', status: 'error' });
+          return;
+        }
         pushToast({ title: 'Login failed', description: 'Server error', status: 'error' });
-        setLoading(false);
         return;
       }
-      const users = Array.isArray(json.data) ? json.data : [];
-      const found = users.find((u: any) => String(u.email).trim().toLowerCase() === String(email).trim().toLowerCase());
-      setLoading(false);
+
+      const json = await res.json();
+      const found = json && json.ok ? json.user : null;
+      // store token and user for sidebar and subsequent requests
+      if (json && json.ok && json.token) {
+        try { localStorage.setItem('token', json.token); } catch {}
+      }
+      if (found) {
+        try { localStorage.setItem('user', JSON.stringify(found)); } catch {}
+      }
       if (!found) {
         pushToast({ title: 'Not found', description: 'No user with this email', status: 'error' });
         return;
       }
-      // optional password check if stored
-      if (found.password && found.password !== password) {
-        pushToast({ title: 'Invalid', description: 'Incorrect password', status: 'error' });
-        return;
-      }
-      // if a role is selected, ensure the found email belongs to that role
-      const selectedRole = String(userType || '').trim().toLowerCase();
-      const foundRole = String(found.userType || '').trim().toLowerCase();
-      if (selectedRole === 'doctor' && foundRole !== 'doctor') {
-        pushToast({ title: 'Role mismatch', description: 'This email is not registered as a Doctor', status: 'error' });
-        return;
-      }
-      if (selectedRole === 'patient' && foundRole !== 'patient') {
-        pushToast({ title: 'Role mismatch', description: 'This email is not registered as a Patient', status: 'error' });
-        return;
-      }
+
+      // if a role is selected, ensure it matches the stored userType
       const selected = String(userType || '').trim().toLowerCase();
       const actual = String(found.userType || '').trim().toLowerCase();
-
-      // If a role is explicitly selected, require it to match the stored userType
-      if (selected) {
-        if (selected !== actual) {
-          pushToast({ title: 'Role mismatch', description: `Selected role does not match this account (${actual || 'unknown'})`, status: 'error' });
-          return;
-        }
-        if (selected === 'doctor') {
-          window.location.assign(window.location.origin + '/doctor-dashboard');
-          return;
-        }
-        if (selected === 'patient') {
-          window.location.assign(window.location.origin + '/patient-dashboard');
-          return;
-        }
+      if (selected && selected !== actual) {
+        pushToast({ title: 'Role mismatch', description: `Selected role does not match this account (${actual || 'unknown'})`, status: 'error' });
+        return;
       }
 
-      // No explicit selection — fall back to the stored userType
-      if (actual === 'doctor') {
+      // redirect based on role
+      if ((selected || actual) === 'doctor') {
         window.location.assign(window.location.origin + '/doctor-dashboard');
         return;
       }
-      if (actual === 'patient') {
+      if ((selected || actual) === 'patient') {
         window.location.assign(window.location.origin + '/patient-dashboard');
         return;
       }
 
-      // fallback
       pushToast({ title: 'Logged in', description: 'Login successful', status: 'success' });
     } catch (e) {
       setLoading(false);
@@ -133,8 +122,11 @@ const Login: React.FC = () => {
                             borderColor={active ? 'teal.400' : 'gray.200'}
                             transition="all 0.2s"
                             _hover={{ borderColor: active ? 'teal.500' : 'gray.300', bg: active ? 'teal.100' : 'gray.50' }}
+                            display="flex"
+                            alignItems="center"
+                            gap={3}
                           >
-                            <Radio value={type} mr={3} colorScheme="teal" />
+                            <Radio value={type} colorScheme="teal" />
                             <Text as="span" fontWeight={active ? 'semibold' : 'medium'}>{type}</Text>
                           </Box>
                         );
@@ -143,7 +135,7 @@ const Login: React.FC = () => {
                   </RadioGroup>
                 </FormControl>
 
-                <Button bg="black" color="white" type="submit" loading={loading} width="full" py={4} fontSize="md" fontWeight="semibold" borderRadius="md">Log in</Button>
+                <Button bg="black" color="white" type="submit" isLoading={loading} width="full" py={4} fontSize="md" fontWeight="semibold" borderRadius="md">Log in</Button>
 
                 <Text fontSize="sm" color="gray.600" textAlign="center">
                   Don't have an account?{' '}
@@ -155,7 +147,7 @@ const Login: React.FC = () => {
             </form>
           </Box>
         </Box>
-        <Box w={{ base: '0', md: '60%' }} display={{ base: 'none', md: 'block' }} bgImage={`url(${bgImage})`} bgSize="cover" bgPos="center right" minH="100vh" flexShrink={0} />
+  <Box w={{ base: '0', md: '60%' }} display={{ base: 'none', md: 'block' }} bgImage={`url(${bgImage})`} bgSize="cover" bgPos="center right" minH="100vh" flexShrink={0} />
       </Flex>
     </Flex>
   );
