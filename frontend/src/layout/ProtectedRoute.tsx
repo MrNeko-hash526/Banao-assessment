@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { getUserFromToken } from '../utils/auth';
 
 type Props = {
   children: React.ReactNode;
@@ -18,9 +19,10 @@ function checkIsRole(user: any, role?: string) {
 export default function ProtectedRoute({ children, allowedRole = 'any' }: Props) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const raw = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-  const user = raw ? JSON.parse(raw) : null;
+  const user = raw ? JSON.parse(raw) : getUserFromToken();
 
-  if (!token) return <Navigate to="/login" replace />;
+  // require both a token and a parsed user object; prevents stale tokens from granting access
+  if (!token || !user) return <Navigate to="/login" replace />;
   if (!checkIsRole(user, allowedRole)) {
     // redirect to home (patient dashboard) if role mismatch
     return <Navigate to="/" replace />;

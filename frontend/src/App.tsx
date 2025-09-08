@@ -32,8 +32,8 @@ const App = () => {
               path: '/',
               element: <MainLayout />,
               children: [
-                { index: true, element: <PatientDash /> },
-                { path: 'patient-dashboard', element: <PatientDash /> },
+                { index: true, element: <ProtectedRoute><PatientDash /></ProtectedRoute> },
+                { path: 'patient-dashboard', element: <ProtectedRoute><PatientDash /></ProtectedRoute> },
                 { path: 'doctor-dashboard', element: <DocDash /> },
                 { path: 'about', element: <About /> },
                 { path: 'blogs', element: <BlogListPage /> },
